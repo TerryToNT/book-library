@@ -12,15 +12,11 @@ contract BookLibrary is Ownable {
         uint copies;
     }
     
-    struct BorrowedBook {
-        uint bookId;
-        bool isBorrowed;
-    }
-    
     Book[] public books;
  
     mapping (uint => address[]) public bookToBorrowers;
-    mapping (address => BorrowedBook[]) public borrowerToBorrowedBooks;
+    //address of borrower mapped to mapping of bookId and boolean if book is borrowed from him at the moment
+    mapping (address => mapping (uint => bool)) public borrowersBooks;
     
     modifier isValidBook(string memory _name) {
         bytes memory tempBookName = bytes(_name);
@@ -48,46 +44,36 @@ contract BookLibrary is Ownable {
     
     function borrowBook(uint _bookId) public {
         require(books[_bookId].copies > 0, 'There is no more copies of this book.');
-        bool hasRecord = false;
-        uint recordId;
+        require(!borrowersBooks[msg.sender][_bookId], 'You already borrowed this book.');
+
+        borrowersBooks[msg.sender][_bookId] = true;
+        books[_bookId].copies--;
+        _addBorrowerToBookList(_bookId);
+    }
+    
+    function returnBook(uint _bookId) public {
+        require(borrowersBooks[msg.sender][_bookId], 'You have not borrow this book.');
         
-        //TODO Try to optimise the logic to avoid the for loop and if statements. (Mapping?)
-        for(uint i = 0; i < borrowerToBorrowedBooks[msg.sender].length; i++) {
-            if (borrowerToBorrowedBooks[msg.sender][i].bookId == _bookId) {
-                require(!borrowerToBorrowedBooks[msg.sender][i].isBorrowed, "You already borrowed this book.");
+        borrowersBooks[msg.sender][_bookId] = false;
+        books[_bookId].copies++;
+    }
+    
+    function showBookBorrowers(uint _bookId) public view returns(address[] memory) {
+        return bookToBorrowers[_bookId];
+    }
+    
+    function _addBorrowerToBookList(uint _bookId) internal {
+        bool hasRecord = false;
+        
+        for(uint i = 0; i < bookToBorrowers[_bookId].length; i++) {
+            if (bookToBorrowers[_bookId][i] == msg.sender) {
                 hasRecord = true;
-                recordId = i;
                 break;
             }
         }
         
-        books[_bookId].copies--;
-        
-        if (hasRecord) {
-            borrowerToBorrowedBooks[msg.sender][recordId].isBorrowed = true;
-        } else {
-            borrowerToBorrowedBooks[msg.sender].push(BorrowedBook(_bookId, true));
+        if (!hasRecord) {
+            bookToBorrowers[_bookId].push(address(msg.sender));
         }
-        
-        //TODO add borrower only ones
-        bookToBorrowers[_bookId].push(address(msg.sender));
-    }
-    
-    function returnBook(uint _bookId) public {
-        //TODO Try to optimise the logic to avoid the for loop and if statements.  (Mapping?)
-        for(uint i = 0; i < borrowerToBorrowedBooks[msg.sender].length; i++) {
-            if (borrowerToBorrowedBooks[msg.sender][i].bookId == _bookId) {
-                if (borrowerToBorrowedBooks[msg.sender][i].isBorrowed) {
-                    books[_bookId].copies++;
-                    borrowerToBorrowedBooks[msg.sender][i].isBorrowed = false;
-                    break;
-                }
-            }
-        }
-    }
-    
-    function showBookBorrowers(uint _bookId) public view returns(address[] memory) {
-        //TODO return only unique address
-        return bookToBorrowers[_bookId];
     }
 }
