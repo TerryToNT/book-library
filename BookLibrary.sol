@@ -51,6 +51,7 @@ contract BookLibrary is Ownable {
         bool hasRecord = false;
         uint recordId;
         
+        //TODO Try to optimise the logic to avoid the for loop and if statements. (Mapping?)
         for(uint i = 0; i < borrowerToBorrowedBooks[msg.sender].length; i++) {
             if (borrowerToBorrowedBooks[msg.sender][i].bookId == _bookId) {
                 require(!borrowerToBorrowedBooks[msg.sender][i].isBorrowed, "You already borrowed this book.");
@@ -73,6 +74,7 @@ contract BookLibrary is Ownable {
     }
     
     function returnBook(uint _bookId) public {
+        //TODO Try to optimise the logic to avoid the for loop and if statements.  (Mapping?)
         for(uint i = 0; i < borrowerToBorrowedBooks[msg.sender].length; i++) {
             if (borrowerToBorrowedBooks[msg.sender][i].bookId == _bookId) {
                 if (borrowerToBorrowedBooks[msg.sender][i].isBorrowed) {
