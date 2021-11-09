@@ -10,7 +10,6 @@ contract BookLibrary is Ownable {
     struct Book {
         string name;
         uint copies;
-        uint id;
     }
     
     uint bookIdDigits = 12; //lenght of book id
@@ -26,11 +25,9 @@ contract BookLibrary is Ownable {
     mapping (uint => address[]) public bookToArrayOfBorrowers;
     //bookId to mapping of borrower address to boolean. Used to validate if the borrower is already added to the array of borrowers for specific book
     mapping (uint => mapping (address => bool)) public bookToBorrowers;
-
     
     modifier isValidBookName(string memory _name) {
-        bytes memory tempBookName = bytes(_name);
-        require(tempBookName.length > 0, 'Invalid book name!');
+        require(bytes(_name).length > 0, 'Invalid book name!');
         _;
     }
     
@@ -46,7 +43,7 @@ contract BookLibrary is Ownable {
     }
     
     modifier bookIsAdded(uint _bookId) {
-        require(books[_bookId].id == 0, 'This book is already added.');
+        require(bytes(books[_bookId].name).length == 0, 'This book is already added.');
         _;
     }
     
@@ -60,7 +57,7 @@ contract BookLibrary is Ownable {
         books[_bookId].copies += _copiesNumber;
     }
     
-    
+   
     function showAvailableBooks() public view returns(uint[] memory) {
         //Returns array with all books ids
         return bookIds;
@@ -98,7 +95,7 @@ contract BookLibrary is Ownable {
     }
     
     function _createBook(string memory _name, uint _copies, uint _id) private bookIsAdded(_id) {
-        books[_id] = Book(_name, _copies, _id);
+        books[_id] = Book(_name, _copies);
         bookIds.push(_id);
     }
 }
